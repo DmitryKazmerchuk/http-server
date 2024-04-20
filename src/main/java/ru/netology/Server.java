@@ -15,23 +15,17 @@ public class Server {
     final List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html",
             "/styles.css", "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
 
-
     public Server(int port) {
         this.port = port;
     }
 
-    private void exit(ServerSocket socket, BufferedReader in, BufferedOutputStream out) {
-        try {
-            if (!socket.isClosed()) {
-                socket.close();
-                in.close();
-                out.close();
-            }
-        } catch (IOException ignored) {
-        }
-    }
+    private void serverResponse(String[] parts, BufferedOutputStream out) throws IOException {
 
-    private void serverSomthing(String[] parts, BufferedOutputStream out) throws IOException {
+        if (parts.length != 3) {
+            // just close socket
+            return;
+        }
+
         final String path = parts[1];
         if (!validPaths.contains(path)) {
             out.write((
@@ -41,6 +35,7 @@ public class Server {
                             "\r\n"
             ).getBytes());
             out.flush();
+            return;
         }
 
         final Path filePath = Path.of(".", "public", path);
@@ -62,6 +57,7 @@ public class Server {
             ).getBytes());
             out.write(content);
             out.flush();
+            return;
         }
 
         final var length = Files.size(filePath);
@@ -96,12 +92,7 @@ public class Server {
                                     final String requestLine = in.readLine();
                                     final String[] parts = requestLine.split(" ");
 
-                                    if (parts.length != 3) {
-                                        exit(serverSocket, in, out);
-                                    }
-
-                                    serverSomthing(parts,out);
-
+                                    serverResponse(parts, out);
 
                                 } catch (IOException e) {
                                     e.printStackTrace();
